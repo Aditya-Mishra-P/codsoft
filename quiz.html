@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz App</title>
+    <style>
+        :root {
+            --color-background: #fcfcf9;
+            --color-surface: #fffffd;
+            --color-text: #134252;
+            --color-text-secondary: #626c71;
+            --color-primary: #21808d;
+            --color-primary-hover: #1d7480;
+            --color-primary-active: #1a6873;
+            --color-secondary: rgba(94, 82, 64, 0.12);
+            --color-secondary-hover: rgba(94, 82, 64, 0.2);
+            --color-border: rgba(94, 82, 64, 0.2);
+            --color-card-border: rgba(94, 82, 64, 0.12);
+            --color-success: #21808d;
+            --color-error: #c0152f;
+            --color-warning: #a84b2f;
+            --color-bg-1: rgba(59, 130, 246, 0.08);
+            --color-bg-2: rgba(245, 158, 11, 0.08);
+            --color-bg-3: rgba(34, 197, 94, 0.08);
+            --radius-base: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-background: #1f2121;
+                --color-surface: #262828;
+                --color-text: #f5f5f5;
+                --color-text-secondary: rgba(167, 169, 169, 0.7);
+                --color-primary: #32b8c6;
+                --color-primary-hover: #2da6b2;
+                --color-primary-active: #2996a1;
+                --color-secondary: rgba(119, 124, 124, 0.15);
+                --color-secondary-hover: rgba(119, 124, 124, 0.25);
+                --color-border: rgba(119, 124, 124, 0.3);
+                --color-card-border: rgba(119, 124, 124, 0.2);
+                --color-success: #32b8c6;
+                --color-error: #ff5459;
+                --color-bg-1: rgba(29, 78, 216, 0.15);
+                --color-bg-2: rgba(180, 83, 9, 0.15);
+                --color-bg-3: rgba(21, 128, 61, 0.15);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--color-background);
+            color: var(--color-text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--color-text);
+        }
+
+        .header p {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+        }
+
+        .quiz-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .quiz-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-card-border);
+            border-radius: var(--radius-base);
+            padding: 16px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .quiz-card:hover {
+            background: var(--color-secondary);
+        }
+
+        .quiz-card-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .quiz-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .question-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-card-border);
+            border-radius: var(--radius-base);
+            padding: 20px;
+        }
+
+        .question-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .question-number {
+            color: var(--color-text);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .question-score {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .question-text {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--color-text);
+            text-align: center;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-base);
+            padding: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .option:hover:not(.disabled) {
+            background: var(--color-secondary);
+        }
+
+        .option.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .option.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .option.disabled {
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: var(--radius-base);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius-base);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--color-secondary);
+            color: var(--color-text);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-secondary-hover);
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .result-screen {
+            text-align: center;
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--color-surface);
+            border: 4px solid var(--color-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+        }
+
+        .score-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .score-label {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin-top: 4px;
+        }
+
+        .result-message {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--color-text);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .quiz-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .question-card {
+                padding: 20px;
+            }
+
+            .question-text {
+                font-size: 18px;
+            }
+
+            .score-circle {
+                width: 160px;
+                height: 160px;
+            }
+
+            .score-value {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Home Screen -->
+        <div id="homeScreen" class="screen active">
+            <div class="header">
+                <h1>📝 Quiz App</h1>
+                <p>Pick a quiz</p>
+            </div>
+
+            <div class="quiz-grid">
+                <div class="quiz-card" onclick="startQuiz('science')">
+                    <div class="quiz-card-icon">🔬</div>
+                    <h3>Science Quiz</h3>
+                </div>
+
+                <div class="quiz-card" onclick="startQuiz('history')">
+                    <div class="quiz-card-icon">🏛️</div>
+                    <h3>History Quiz</h3>
+                </div>
+
+                <div class="quiz-card" onclick="startQuiz('technology')">
+                    <div class="quiz-card-icon">💻</div>
+                    <h3>Technology Quiz</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quizScreen" class="screen">
+            <div class="question-card">
+                <div class="question-header">
+                    <div class="question-number" id="questionNumber">Question 1 of 5</div>
+                    <div class="question-score">Score: <span id="currentScore">0</span></div>
+                </div>
+
+                <div class="question-text" id="questionText"></div>
+
+                <div class="options" id="optionsContainer"></div>
+
+                <div id="feedbackContainer"></div>
+
+                <div class="button-group">
+                    <button class="btn" id="nextButton" onclick="nextQuestion()" style="display: none;">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="resultScreen" class="screen">
+            <div class="header">
+                <h1>🎉 Done!</h1>
+            </div>
+
+            <div class="score-circle">
+                <div class="score-value" id="finalScore">0/5</div>
+                <div class="score-label">Score</div>
+            </div>
+
+            <div class="result-message" id="resultMessage"></div>
+
+            <div class="button-group">
+                <button class="btn btn-secondary" onclick="goHome()">Home</button>
+                <button class="btn" onclick="retryQuiz()">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Quiz Data
+        const quizData = {
+            science: [
+                {
+                    question: "What is the chemical symbol for water?",
+                    options: ["H2O", "CO2", "O2", "NaCl"],
+                    correct: 0,
+                    explanation: "Water is H₂O - two hydrogen atoms and one oxygen atom."
+                },
+                {
+                    question: "What planet is known as the Red Planet?",
+                    options: ["Venus", "Jupiter", "Mars", "Saturn"],
+                    correct: 2,
+                    explanation: "Mars is red because of iron oxide on its surface."
+                },
+                {
+                    question: "What is the largest organ in the human body?",
+                    options: ["Heart", "Brain", "Liver", "Skin"],
+                    correct: 3,
+                    explanation: "The skin is the largest organ covering the entire body."
+                },
+                {
+                    question: "What gas do plants absorb?",
+                    options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"],
+                    correct: 2,
+                    explanation: "Plants absorb CO₂ during photosynthesis."
+                },
+                {
+                    question: "What force keeps us on the ground?",
+                    options: ["Magnetism", "Electricity", "Gravity", "Friction"],
+                    correct: 2,
+                    explanation: "Gravity attracts objects toward Earth's center."
+                }
+            ],
+            history: [
+                {
+                    question: "Who was the first president of the United States?",
+                    options: ["Thomas Jefferson", "George Washington", "John Adams", "Benjamin Franklin"],
+                    correct: 1,
+                    explanation: "George Washington was the first U.S. president."
+                },
+                {
+                    question: "Which ancient civilization built the pyramids?",
+                    options: ["Romans", "Greeks", "Egyptians", "Mayans"],
+                    correct: 2,
+                    explanation: "The ancient Egyptians built the famous pyramids."
+                },
+                {
+                    question: "What year did the Titanic sink?",
+                    options: ["1910", "1912", "1914", "1916"],
+                    correct: 1,
+                    explanation: "The Titanic sank on April 15, 1912."
+                },
+                {
+                    question: "Who painted the Mona Lisa?",
+                    options: ["Michelangelo", "Leonardo da Vinci", "Raphael", "Donatello"],
+                    correct: 1,
+                    explanation: "Leonardo da Vinci painted the Mona Lisa."
+                },
+                {
+                    question: "In which year did India gain independence?",
+                    options: ["1945", "1946", "1947", "1948"],
+                    correct: 2,
+                    explanation: "India gained independence on August 15, 1947."
+                }
+            ],
+            technology: [
+                {
+                    question: "What does CPU stand for?",
+                    options: ["Central Processing Unit", "Computer Personal Unit", "Central Program Utility", "Computer Processing Utility"],
+                    correct: 0,
+                    explanation: "CPU stands for Central Processing Unit."
+                },
+                {
+                    question: "Who founded Microsoft?",
+                    options: ["Steve Jobs", "Bill Gates", "Mark Zuckerberg", "Larry Page"],
+                    correct: 1,
+                    explanation: "Bill Gates co-founded Microsoft in 1975."
+                },
+                {
+                    question: "What year was the first iPhone released?",
+                    options: ["2005", "2006", "2007", "2008"],
+                    correct: 2,
+                    explanation: "Apple released the first iPhone in 2007."
+                },
+                {
+                    question: "What does AI stand for?",
+                    options: ["Automated Intelligence", "Artificial Intelligence", "Advanced Information", "Automated Information"],
+                    correct: 1,
+                    explanation: "AI stands for Artificial Intelligence."
+                },
+                {
+                    question: "What does WWW stand for?",
+                    options: ["World Wide Web", "World Web Wide", "Wide World Web", "Web World Wide"],
+                    correct: 0,
+                    explanation: "WWW stands for World Wide Web."
+                }
+            ]
+        };
+
+        // Game State
+        let currentQuiz = [];
+        let currentQuizName = '';
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedAnswer = null;
+        let userAnswers = [];
+
+        // Initialize
+        function startQuiz(quizType) {
+            currentQuizName = quizType;
+            currentQuestion = 0;
+            score = 0;
+            selectedAnswer = null;
+            userAnswers = [];
+
+            // Select quiz questions
+            currentQuiz = [...quizData[quizType]];
+
+            showScreen('quizScreen');
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const question = currentQuiz[currentQuestion];
+
+            document.getElementById('questionNumber').textContent = `Question ${currentQuestion + 1} of ${currentQuiz.length}`;
+            document.getElementById('currentScore').textContent = score;
+            document.getElementById('questionText').textContent = question.question;
+            document.getElementById('nextButton').style.display = 'none';
+            document.getElementById('feedbackContainer').innerHTML = '';
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.textContent = option;
+                optionDiv.onclick = () => selectAnswer(index);
+                optionsContainer.appendChild(optionDiv);
+            });
+
+            selectedAnswer = null;
+        }
+
+        function selectAnswer(index) {
+            if (selectedAnswer !== null) return; // Already answered
+
+            selectedAnswer = index;
+            const question = currentQuiz[currentQuestion];
+            const options = document.querySelectorAll('.option');
+            const isCorrect = index === question.correct;
+
+            // Store user answer
+            userAnswers.push({
+                question: question.question,
+                userAnswer: question.options[index],
+                correctAnswer: question.options[question.correct],
+                isCorrect: isCorrect
+            });
+
+            // Update score
+            if (isCorrect) {
+                score++;
+                document.getElementById('currentScore').textContent = score;
+            }
+
+            // Mark options
+            options.forEach((option, i) => {
+                option.classList.add('disabled');
+                if (i === question.correct) {
+                    option.classList.add('correct');
+                } else if (i === index) {
+                    option.classList.add('incorrect');
+                }
+            });
+
+            // Show feedback
+            const feedbackContainer = document.getElementById('feedbackContainer');
+            feedbackContainer.innerHTML = `
+                <div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">
+                    ${isCorrect ? '✓ Correct!' : '✗ Wrong!'}
+                </div>
+            `;
+
+            // Show next button
+            document.getElementById('nextButton').style.display = 'inline-block';
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            
+            if (currentQuestion < currentQuiz.length) {
+                displayQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            showScreen('resultScreen');
+
+            const percentage = Math.round((score / currentQuiz.length) * 100);
+            document.getElementById('finalScore').textContent = `${score}/${currentQuiz.length}`;
+
+            let message = '';
+            if (percentage === 100) {
+                message = 'Perfect!';
+            } else if (percentage >= 60) {
+                message = 'Good job!';
+            } else {
+                message = 'Try again!';
+            }
+            document.getElementById('resultMessage').textContent = message;
+        }
+
+        function retryQuiz() {
+            startQuiz(currentQuizName);
+        }
+
+        function goHome() {
+            showScreen('homeScreen');
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
